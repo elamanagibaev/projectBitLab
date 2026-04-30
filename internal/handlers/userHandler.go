@@ -8,7 +8,7 @@ import (
 )
 
 type UserHandler interface {
-	AddUserHandler(w http.ResponseWriter, r *http.Request)
+	AddUser(w http.ResponseWriter, r *http.Request)
 }
 
 type userHandler struct {
@@ -19,11 +19,25 @@ func NewUserHandler(userService services.UserService) UserHandler {
 	return &userHandler{userService: userService}
 }
 
-func (userHandler *userHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 	var newUser models.User
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
+		http.Error(w, "ошибка", http.StatusBadRequest)
 		return
 	}
-	userHandler.userService.AddUserService(newUser)
+	createUser, err := h.userService.AddUser(newUser)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	err = json.NewEncoder(w).Encode(createUser)
+	if err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

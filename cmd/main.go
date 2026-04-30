@@ -38,13 +38,26 @@ func CloseDB() {
 func main() {
 	InitDB()
 	defer CloseDB()
+	router := mux.NewRouter()
 
-	userRepositories := repositories.NewUserRepositories(db)
-	userService := services.NewUserService(userRepositories)
+	userRepository := repositories.NewUserRepository(db)
+	userService := services.NewUserService(userRepository)
 	userHandler := handlers.NewUserHandler(userService)
 
-	router := mux.NewRouter()
-	router.HandleFunc("/users", userHandler.AddUserHandler).Methods("POST")
+	router.HandleFunc("/users", userHandler.AddUser).Methods("POST")
+
+	projectRepository := repositories.NewProjectRepository(db)
+	projectService := services.NewProjectService(projectRepository)
+	projectHandler := handlers.NewProjectHandler(projectService)
+
+	router.HandleFunc("/projects", projectHandler.AddProject).Methods("POST")
+
+	taskRepository := repositories.NewTaskRepository(db)
+	taskService := services.NewTaskService(taskRepository)
+	taskHandler := handlers.NewTaskHandler(taskService)
+
+	router.HandleFunc("/task", taskHandler.AddTask).Methods("POST")
+	router.HandleFunc("/task", taskHandler.ChangeTask).Methods("PUT")
 
 	server := http.Server{
 		Addr:    "localhost:4041",

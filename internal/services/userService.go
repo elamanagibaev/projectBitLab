@@ -1,22 +1,31 @@
 package services
 
 import (
+	"errors"
 	"projectBit/internal/repositories"
 	"projectBit/models"
 )
 
 type UserService interface {
-	AddUserService(user models.User)
+	AddUser(user models.User) (models.User, error)
 }
 
 type userService struct {
-	userRepositories repositories.UserRepositories
+	userRepository repositories.UserRepository
 }
 
-func NewUserService(userRepositories repositories.UserRepositories) UserService {
-	return &userService{userRepositories: userRepositories}
+func NewUserService(userRepository repositories.UserRepository) UserService {
+	return &userService{userRepository: userRepository}
 }
 
-func (userService *userService) AddUserService(user models.User) {
-	userService.userRepositories.AddUser(user)
+func (s *userService) AddUser(user models.User) (models.User, error) {
+	if user.Name == "" || user.Email == "" {
+		return models.User{}, errors.New("name и email обязательны")
+	}
+	newUser, err := s.userRepository.AddUser(user)
+
+	if err != nil {
+		return models.User{}, err
+	}
+	return newUser, nil
 }
